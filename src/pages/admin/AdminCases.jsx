@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getAllCasesForAdmin, createCase, addStatusUpdate } from '../../api/casesApi';
 
 const emptyCaseForm = { applicantName: '', phone: '', email: '', serviceType: '', assignedAdvisor: '' };
 const emptyUpdateForm = { stage: '', note: '' };
 
 export default function AdminCases() {
+  const location = useLocation();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [caseForm, setCaseForm] = useState(emptyCaseForm);
+  // if we arrived here via "Create Case" on a Lead, start the form
+  // pre-filled with that lead's details instead of blank
+  const [caseForm, setCaseForm] = useState(() => ({
+    ...emptyCaseForm,
+    ...(location.state?.prefill || {})
+  }));
   const [caseError, setCaseError] = useState('');
   const [activeCaseId, setActiveCaseId] = useState(null);
   const [updateForm, setUpdateForm] = useState(emptyUpdateForm);
@@ -55,6 +62,11 @@ export default function AdminCases() {
 
       <form className="card" onSubmit={handleCreateCase} style={{ marginBottom: 30 }}>
         <h3>Create a new case</h3>
+        {location.state?.prefill && (
+          <p style={{ fontSize: '0.85rem', color: 'var(--green-dark, #188a5f)', marginTop: -8, marginBottom: 16 }}>
+            Pre-filled from an enquiry — check the details before creating.
+          </p>
+        )}
         <div className="grid-2">
           <div className="field"><label>Applicant name</label><input value={caseForm.applicantName} onChange={(e) => setCaseForm({ ...caseForm, applicantName: e.target.value })} required /></div>
           <div className="field"><label>Phone</label><input value={caseForm.phone} onChange={(e) => setCaseForm({ ...caseForm, phone: e.target.value })} placeholder="10-digit mobile number" required /></div>

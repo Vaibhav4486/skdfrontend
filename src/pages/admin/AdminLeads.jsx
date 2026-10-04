@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllLeads, updateLeadStatus } from '../../api/leadsApi';
 
 const STATUSES = ['NEW', 'CONTACTED', 'CONVERTED', 'CLOSED'];
@@ -12,6 +13,7 @@ export default function AdminLeads() {
   const [leads, setLeads] = useState([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   function load() {
     setLoading(true);
@@ -23,6 +25,22 @@ export default function AdminLeads() {
   async function handleStatusChange(id, value) {
     await updateLeadStatus(id, value);
     load();
+  }
+
+  // Deliberately NOT automatic on status change — not every converted lead
+  // needs a trackable case (a one-off GST filing might not), so this stays a
+  // manual, explicit action. It just saves retyping what's already known.
+  function handleCreateCase(lead) {
+    navigate('/admin/cases', {
+      state: {
+        prefill: {
+          applicantName: lead.fullName,
+          phone: lead.phone,
+          email: lead.email || '',
+          serviceType: lead.serviceInterested
+        }
+      }
+    });
   }
 
   return (
@@ -45,7 +63,7 @@ export default function AdminLeads() {
       {!loading && leads.length > 0 && (
         <table>
           <thead>
-            <tr><th>Name</th><th>Phone</th><th>Service</th><th>Message</th><th>Status</th></tr>
+            <tr><th>Name</th><th>Phone</th><th>Service</th><th>Message</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             {leads.map((l) => (
@@ -63,6 +81,9 @@ export default function AdminLeads() {
                   >
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
+                </td>
+                <td>
+                  <button className="btn-ghost-sm" onClick={() => handleCreateCase(l)}>Create Case</button>
                 </td>
               </tr>
             ))}
